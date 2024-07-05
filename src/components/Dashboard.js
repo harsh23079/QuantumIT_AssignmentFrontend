@@ -1,31 +1,55 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { Table, Button } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
-import '../index.css'; 
+import React, { useContext, useEffect, useState } from "react";
+import { Table, Button } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { AuthContext } from "../context/AuthContext";
+import "../index.css";
 
 const Dashboard = () => {
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [userData, setUserData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user) {
-      setUserData([user]);
-    }
+    const fetchUserData = async () => {
+      try {
+        const res = await axios.get(
+          `${process.env.REACT_APP_BACKEND_URL}/api/auth/users`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        setUserData(res.data);
+        setLoading(false);
+      } catch (error) {
+        setError(error.response ? error.response.data : "Error fetching data");
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
   }, []);
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate("/login");
   };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
         <h2 className="dashboard-heading">User Dashboard</h2>
-        <Button className="logout-button" onClick={handleLogout}>Logout</Button>
+        <Button className="logout-button" onClick={handleLogout}>
+          Logout
+        </Button>
       </div>
       <Table striped bordered hover responsive className="dashboard-table">
         <thead>
